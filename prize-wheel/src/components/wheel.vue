@@ -87,7 +87,6 @@ export default {
       prizeInfo: [],
       lightItem: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
       winner: 2, //指定获奖下标 specified为true时生效
-      specified: false, //是否指定获奖结果，false时为随机
       isGo: false, //抽奖执行状态，防止用户多次点击
       wheelElement: null,
     };
@@ -97,22 +96,6 @@ export default {
     this.getPrizeInfo();
   },
   methods: {
-    // 确认弹窗回调
-    submit() {
-      this.show = false;
-      axios
-        .post(`https://qcs8ni.fn.thelarkcloud.com/winOnePrize`, {
-          _id: this.prizeInfo[this.winner]._id,
-          prize_name: this.prizeInfo[this.winner].prize_name,
-        })
-        .then((res) => {
-          if (res.data.result) {
-            console.log("上传中奖记录成功");
-          } else {
-            console.log("上传中奖记录失败");
-          }
-        });
-    },
     //从后端获取奖品信息
     getPrizeInfo() {
       axios
@@ -133,53 +116,47 @@ export default {
         this.isGo = true;
         this.wheelElement = document.querySelector(".wheel"); //获取.wheel
         this.wheelElement.classList.remove("wr"); //先把原动画类移除
-        //中奖返回方法
-        if (this.specified) {
-          //此处可指定某奖品
-          // this.winner = xxx
-          this.winCallback();
-        } else {
-          this.winner = this.getWinnerIndex();
-          this.winCallback();
-        }
+        this.winCallback();
       }
     },
-    //根据中奖概率,取得中奖下标
-    getWinnerIndex() {
-      const randomNum = Math.random();
-      console.log("randomNum:", randomNum);
-      let totalProbability = 0;
-      for (let i = 0; i < this.prizeInfo.length; i++) {
-        totalProbability += this.prizeInfo[i].prize_probability;
-        if (randomNum <= totalProbability) {
-          return i;
-        }
-      }
-    },
+
     //中奖返回方法
     winCallback() {
-      //计算出要执行的CSS动画
-      //将奖项数目赋值给--nums,中奖下标赋值给--winner,以便CSS计算
-      let root = document.querySelector(":root");
-      root.style.setProperty("--nums", this.prizeInfo.length);
-      root.style.setProperty("--winner", this.winner);
+      axios
+        .post(`https://qcs8ni.fn.thelarkcloud.com/winOnePrize`)
+        .then((res) => {
+          if (res.data.result) {
+            console.log(res.data.result);
+            this.winner = res.data.result.prize_index;
+            console.log("抽奖成功");
 
-      setTimeout(() => {
-        /* 此处是为了解决当下次抽中的奖励与这次相同，动画不重新执行的 */
-        /* 添加一个定时器，是为了解决动画属性的替换效果，实现动画的重新执行 */
-        this.wheelElement.classList.add("wr"); //添加动画类
-      }, 0);
-      // 因为动画时间为 5s ，所以这里5s后获取结果，其实结果早就定下了，只是何时显示，告诉用户
-      setTimeout(() => {
-        this.isGo = false;
-        console.log(`恭喜你获得了第${this.winner}项奖品`);
-        console.log(`${this.prizeInfo[this.winner].prize_winning_info}`);
-        this.show = true;
-      }, 5000);
+            //计算出要执行的CSS动画
+            //将奖项数目赋值给--nums,中奖下标赋值给--winner,以便CSS计算
+            let root = document.querySelector(":root");
+            root.style.setProperty("--nums", this.prizeInfo.length);
+            root.style.setProperty("--winner", this.winner);
+
+            setTimeout(() => {
+              /* 此处是为了解决当下次抽中的奖励与这次相同，动画不重新执行的 */
+              /* 添加一个定时器，是为了解决动画属性的替换效果，实现动画的重新执行 */
+              this.wheelElement.classList.add("wr"); //添加动画类
+            }, 0);
+            // 因为动画时间为 5s ，所以这里5s后获取结果，其实结果早就定下了，只是何时显示，告诉用户
+            setTimeout(() => {
+              this.isGo = false;
+              console.log(`恭喜你获得了第${this.winner}项奖品`);
+              console.log(`${this.prizeInfo[this.winner].prize_winning_info}`);
+              this.show = true;
+            }, 5000);
+          } else {
+            console.log("抽奖失败");
+            alert("抽奖失败");
+          }
+        });
     },
-    //随机一个整数的方法
-    random(min, max) {
-      return parseInt(Math.random() * (max - min + 1) + min);
+    // 确认弹窗回调
+    submit() {
+      this.show = false;
     },
   },
 };
