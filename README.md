@@ -1,4 +1,4 @@
-# byte-dance-front-end-course
+# ByteDance_course_prizeWheel
 
 字节跳动前端课程-手写一个抽奖转盘
 
